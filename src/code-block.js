@@ -16,6 +16,25 @@ export default class CodeBlockPlugin extends Plugin {
 		const schema = editor.model.schema;
 		const conversion = editor.conversion;
 
+		const view = editor.editing.view;
+		const viewDocument = view.document;
+
+		this.listenTo( viewDocument, 'enter', ( evt, data ) => {
+			if ( data.domEvent.keyCode !== 13 ) {
+				return;
+			}
+
+			// Test if we're within the codeblock
+			const selection = editor.model.document.selection;
+
+			if ( !withinCodeBlock(selection.getFirstPosition()) ) {
+				return;
+			}
+
+			editor.execute( 'input', { text: '\n' } );
+			data.preventDefault();
+		}, { priority: 'highest' } );
+
 		// Configure schema.
 		schema.register('codeblock', {
 			isObject: true,
@@ -37,6 +56,21 @@ export default class CodeBlockPlugin extends Plugin {
 			.add(modelCodeBlockToView());
 	}
 }
+
+export function withinCodeBlock( position ) {
+	let parent = position.parent;
+
+	while ( parent ) {
+		if ( parent.name === 'codeblock' ) {
+			return true;
+		}
+
+		parent = parent.parent;
+	}
+
+	return false;
+}
+
 
 export function modelCodeBlockToView() {
 	return dispatcher => {
