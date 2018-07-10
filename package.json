@@ -1,0 +1,24 @@
+{
+  "name": "@ckeditor/ckeditor5-code-block",
+  "version": "10.1.0",
+  "description": "CKEditor5 support for code blocks wrapped in pre tags",
+  "devDependencies": {
+    "@ckeditor/ckeditor5-core": "^10.1.0",
+    "@ckeditor/ckeditor5-engine": "^10.1.0"
+  },
+  "engines": {
+    "node": ">=6.9.0",
+    "npm": ">=3.0.0"
+  },
+  "author": "CKSource (http://cksource.com/), OpenProject (http://openproject.org/)",
+  "license": "GPL-2.0-or-later",
+  "homepage": "https://github.com/opf/ckeditor5-code-block",
+  "bugs": "https://github.com/opf/ckeditor5-code-block/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/opf/ckeditor5-code-block"
+  },
+  "files": [
+    "src"
+  ]
+}
