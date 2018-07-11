@@ -1,3 +1,5 @@
+import {registerEnterEditHandler, registerBackspaceHandler} from './keyboard-handlers';
+
 import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
 import ModelPosition from '@ckeditor/ckeditor5-engine/src/model/position';
 import ModelRange from '@ckeditor/ckeditor5-engine/src/model/range';
@@ -16,24 +18,15 @@ export default class CodeBlockPlugin extends Plugin {
 		const schema = editor.model.schema;
 		const conversion = editor.conversion;
 
-		const view = editor.editing.view;
-		const viewDocument = view.document;
+		// Insert newlines manually when pressing enter
+		// within the code block
+		registerEnterEditHandler(this, editor);
 
-		this.listenTo( viewDocument, 'enter', ( evt, data ) => {
-			if ( data.domEvent.keyCode !== 13 ) {
-				return;
-			}
+		// Remove the codeblock on backspace when the codeblock
+		// is empty.
+		registerBackspaceHandler(this, editor);
 
-			// Test if we're within the codeblock
-			const selection = editor.model.document.selection;
-
-			if ( !withinCodeBlock(selection.getFirstPosition()) ) {
-				return;
-			}
-
-			editor.execute( 'input', { text: '\n' } );
-			data.preventDefault();
-		}, { priority: 'highest' } );
+		// Escape from the code block when
 
 		// Configure schema.
 		schema.register('codeblock', {
@@ -56,21 +49,6 @@ export default class CodeBlockPlugin extends Plugin {
 			.add(modelCodeBlockToView());
 	}
 }
-
-export function withinCodeBlock( position ) {
-	let parent = position.parent;
-
-	while ( parent ) {
-		if ( parent.name === 'codeblock' ) {
-			return true;
-		}
-
-		parent = parent.parent;
-	}
-
-	return false;
-}
-
 
 export function modelCodeBlockToView() {
 	return dispatcher => {
