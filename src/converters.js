@@ -14,14 +14,15 @@ export function modelCodeBlockToView() {
 		}
 
 		const codeBlock = data.item;
+		const language = codeBlock.getAttribute('language') || 'language-text';
 
 		// Consume the codeblock and text
 		conversionApi.consumable.consume( codeBlock, 'insert' );
 
 		// Wrap the element in a <pre> <code> block
 		const viewWriter = conversionApi.writer;
-		const preElement = viewWriter.createContainerElement( 'pre', { class: 'language-TODO' } );
-		const codeElement = viewWriter.createContainerElement( 'code' );
+		const preElement = viewWriter.createContainerElement( 'pre' );
+		const codeElement = viewWriter.createContainerElement( 'code', { class: language } );
 
 		viewWriter.insert( ViewPosition.createAt( preElement ), codeElement );
 
@@ -56,6 +57,7 @@ export function viewCodeBlockToModel() {
 
 		// Create the model element
 		const modelCodeBlock = conversionApi.writer.createElement( 'codeblock' );
+		conversionApi.writer.setAttribute( 'language', codeBlock.getAttribute('class'), modelCodeBlock );
 
 		// Find allowed parent for paragraph that we are going to insert. If current parent does not allow
 		// to insert paragraph but one of the ancestors does then split nodes to allowed parent.

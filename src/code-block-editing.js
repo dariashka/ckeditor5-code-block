@@ -4,6 +4,9 @@ import ButtonView from '@ckeditor/ckeditor5-ui/src/button/buttonview';
 import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
 import {modelCodeBlockToView, viewCodeBlockToModel} from './converters';
 import {registerEnterEditHandler, registerBackspaceHandler} from './keyboard-handlers';
+import ModelPosition from '@ckeditor/ckeditor5-engine/src/model/position';
+import ModelSelection from '@ckeditor/ckeditor5-engine/src/model/selection';
+import ModelRange from '@ckeditor/ckeditor5-engine/src/model/range';
 
 export default class CodeBlockEditing extends Plugin {
 
@@ -31,7 +34,8 @@ export default class CodeBlockEditing extends Plugin {
 			isObject: true,
 			isBlock: true,
 			allowContentOf: '$block',
-			allowWhere: '$block',
+			allowWhere: ['$root', '$block'],
+			allowIn: ['$root'],
 			allowAttributes: ['language']
 		});
 
@@ -57,9 +61,20 @@ export default class CodeBlockEditing extends Plugin {
 
 			// Callback executed once the image is clicked.
 			view.on( 'execute', () => {
+				const modelSelection = editor.model.document.selection;
+				const probe = new ModelSelection( modelSelection );
+				const insertAt = findOptimalInsertionPosition(probe);
+
 				 editor.model.change(writer => {
 					const element = writer.createElement( 'codeblock' );
-					editor.model.insertContent( element, editor.model.document.selection );
+					const placeholder = writer.createText( '' );
+
+					writer.insert(placeholder, element, 0);
+
+					const targetSelection = new ModelSelection( [ new ModelRange( insertAt ) ] );
+					editor.model.insertContent(element, targetSelection);
+					// writer.insert( element, selectedElement, 'end' );
+					// writer.setSelection( element, 'in' );
 				})
 			} );
 
@@ -67,3 +82,34 @@ export default class CodeBlockEditing extends Plugin {
 		} );
 	}
 }
+
+export function findOptimalInsertionPosition( selection ) {
+	const selectedElement = selection.getSelectedElement();
+
+	if ( selectedElement ) {
+		return ModelPosition.createAfter( selectedElement );
+	}
+
+	const firstBlock = selection.getSelectedBlocks().next().value;
+
+	if ( firstBlock ) {
+		// If inserting into an empty block – return position in that block. It will get
+		// replaced with the image by insertContent(). #42.
+		if ( firstBlock.isEmpty ) {
+			return ModelPosition.createAt( firstBlock );
+		}
+
+		const positionAfter = ModelPosition.createAfter( firstBlock );
+
+		// If selection is at the end of the block - return position after the block.
+		if ( selection.focus.isTouching( positionAfter ) ) {
+			return positionAfter;
+		}
+
+		// Otherwise return position before the block.
+		return ModelPosition.createBefore( firstBlock );
+	}
+
+	return selection.focus;
+}
+
